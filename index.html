@@ -1,619 +1,602 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.6">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000; min-height: 14.0px}
-    span.s1 {font-kerning: none}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Seoul Trip Planner with AI Features</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral (Slate, Stone, Amber) -->
+    <!-- Application Structure Plan: A tabbed, single-page dashboard design was chosen over a linear report structure to provide non-linear, task-oriented access to information. Users can instantly jump to the daily itinerary, food guide, or logistics without extensive scrolling. The core interaction is an expandable card for each day's schedule, making the detailed plan easily accessible. This structure is optimized for on-the-go use by a traveler who needs quick answers. Gemini API features are integrated directly into relevant sections (Itinerary tweaks) and as a new, dedicated 'Culture' tab for Q&A. -->
+    <!-- Visualization & Content Choices: Report Info: Airport Transport Table -> Goal: Compare options -> Viz: Interactive Bar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Visually more intuitive and engaging for comparing quantitative data (cost/time) than a static table. Report Info: Daily Itinerary Text -> Goal: Organize daily plan -> Viz: Expandable HTML/CSS Cards -> Interaction: Click to expand/collapse -> Justification: Hides complexity, allows users to focus on one day at a time, better for mobile viewing. Report Info: Gemini API Integration -> Goal: Provide dynamic, personalized travel advice -> Viz: Modal pop-ups and dedicated Q&A section -> Interaction: Button clicks and text input -> Justification: Integrates AI assistance seamlessly without cluttering the main UI, providing on-demand intelligence. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-active { 
+            border-color: #f59e0b; 
+            color: #f59e0b;
+            background-color: #fffbeb;
+        }
+        .section { display: none; }
+        .section.active { display: block; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container { height: 400px; }
+        }
+        .day-card-header { transition: background-color 0.3s ease; }
+        .day-card-header:hover { background-color: #f7fafc; }
+        .details-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.7s ease-in-out;
+        }
+        .details-content.open {
+            max-height: 2000px;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #f59e0b;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body>
-<p class="p1"><span class="s1">&lt;!DOCTYPE html&gt;</span></p>
-<p class="p1"><span class="s1">&lt;html lang="en"&gt;</span></p>
-<p class="p1"><span class="s1">&lt;head&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;title&gt;Interactive Seoul Trip Planner with AI Features&lt;/title&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdn.jsdelivr.net/npm/chart.js"&gt;&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;link rel="preconnect" href="https://fonts.googleapis.com"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;!-- Chosen Palette: Warm Neutral (Slate, Stone, Amber) --&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;!-- Application Structure Plan: A tabbed, single-page dashboard design was chosen over a linear report structure to provide non-linear, task-oriented access to information. Users can instantly jump to the daily itinerary, food guide, or logistics without extensive scrolling. The core interaction is an expandable card for each day's schedule, making the detailed plan easily accessible. This structure is optimized for on-the-go use by a traveler who needs quick answers. Gemini API features are integrated directly into relevant sections (Itinerary tweaks) and as a new, dedicated 'Culture' tab for Q&amp;A. --&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;!-- Visualization &amp; Content Choices: Report Info: Airport Transport Table -&gt; Goal: Compare options -&gt; Viz: Interactive Bar Chart (Chart.js) -&gt; Interaction: Hover tooltips -&gt; Justification: Visually more intuitive and engaging for comparing quantitative data (cost/time) than a static table. Report Info: Daily Itinerary Text -&gt; Goal: Organize daily plan -&gt; Viz: Expandable HTML/CSS Cards -&gt; Interaction: Click to expand/collapse -&gt; Justification: Hides complexity, allows users to focus on one day at a time, better for mobile viewing. Report Info: Gemini API Integration -&gt; Goal: Provide dynamic, personalized travel advice -&gt; Viz: Modal pop-ups and dedicated Q&amp;A section -&gt; Interaction: Button clicks and text input -&gt; Justification: Integrates AI assistance seamlessly without cluttering the main UI, providing on-demand intelligence. --&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. --&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;style&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>body { font-family: 'Inter', sans-serif; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.tab-active {<span class="Apple-converted-space"> </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>border-color: #f59e0b;<span class="Apple-converted-space"> </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>color: #f59e0b;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>background-color: #fffbeb;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.section { display: none; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.section.active { display: block; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.chart-container {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>position: relative;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>width: 100%;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>max-width: 600px;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>margin-left: auto;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>margin-right: auto;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>height: 350px;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>max-height: 400px;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>@media (min-width: 768px) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>.chart-container { height: 400px; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.day-card-header { transition: background-color 0.3s ease; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.day-card-header:hover { background-color: #f7fafc; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.details-content {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>max-height: 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>overflow: hidden;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>transition: max-height 0.7s ease-in-out;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.details-content.open {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>max-height: 2000px;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.modal-overlay {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>position: fixed;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>top: 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>left: 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>width: 100%;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>height: 100%;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>background-color: rgba(0, 0, 0, 0.5);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>display: flex;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>justify-content: center;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>align-items: center;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>z-index: 1000;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>opacity: 0;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>visibility: hidden;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>transition: opacity 0.3s ease, visibility 0.3s ease;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.modal-overlay.visible {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>opacity: 1;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>visibility: visible;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.modal-content {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>background-color: white;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>padding: 2rem;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>border-radius: 0.75rem;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>width: 90%;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>max-width: 600px;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>max-height: 80vh;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>overflow-y: auto;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>.loader {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>border: 4px solid #f3f3f3;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>border-top: 4px solid #f59e0b;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>border-radius: 50%;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>width: 40px;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>height: 40px;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>animation: spin 1s linear infinite;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>@keyframes spin {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>0% { transform: rotate(0deg); }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>100% { transform: rotate(360deg); }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/head&gt;</span></p>
-<p class="p1"><span class="s1">&lt;body class="bg-stone-50 text-slate-800"&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;header class="bg-white shadow-md sticky top-0 z-50"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="container mx-auto px-4 py-3"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div class="flex flex-col sm:flex-row justify-between items-center"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;h1 class="text-2xl font-bold text-slate-800 mb-2 sm:mb-0"&gt;Seoul Expedition Planner&lt;/h1&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;nav id="main-nav" class="flex flex-wrap justify-center gap-2 sm:gap-4"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button data-tab="overview" class="nav-tab px-4 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent hover:text-amber-600 hover:border-amber-600 transition"&gt;Overview&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button data-tab="itinerary" class="nav-tab px-4 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent hover:text-amber-600 hover:border-amber-600 transition"&gt;Itinerary&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button data-tab="logistics" class="nav-tab px-4 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent hover:text-amber-600 hover:border-amber-600 transition"&gt;Logistics&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button data-tab="food" class="nav-tab px-4 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent hover:text-amber-600 hover:border-amber-600 transition"&gt;Food Guide&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button data-tab="culture" class="nav-tab px-4 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent hover:text-amber-600 hover:border-amber-600 transition"&gt;Culture&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/nav&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/header&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;main class="container mx-auto p-4 sm:p-6 md:p-8"&gt;</span></p>
-<p class="p2"><span class="s1"><span class="Apple-converted-space">        </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;section id="overview" class="section"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div class="bg-white p-8 rounded-xl shadow-lg text-center"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;h2 class="text-3xl font-bold text-amber-600 mb-4"&gt;Your AI-Powered Adventure in Seoul!&lt;/h2&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;p class="text-slate-600 max-w-3xl mx-auto mb-6"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>Welcome to your personalized, interactive guide for an unforgettable week in Seoul. This dashboard is now enhanced with AI to help you plan and explore. Use the tabs to find your itinerary, logistics, and food guide. Check the new **Culture** tab to ask questions, and look for the ✨ sparkle buttons in the itinerary for AI-powered suggestions!</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div class="bg-stone-100 p-6 rounded-lg"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;h3 class="font-bold text-lg mb-2 text-slate-700"&gt;Trip Details&lt;/h3&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p&gt;&lt;strong&gt;Destination:&lt;/strong&gt; Seoul, South Korea&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p&gt;&lt;strong&gt;Duration:&lt;/strong&gt; 7 Days / 6 Nights&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p&gt;&lt;strong&gt;Dates:&lt;/strong&gt; Oct 5th - Oct 11th&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p&gt;&lt;strong&gt;Travelers:&lt;/strong&gt; 3 (2 Adults, 1 Child)&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div class="bg-stone-100 p-6 rounded-lg"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;h3 class="font-bold text-lg mb-2 text-slate-700"&gt;Recommended Basecamp&lt;/h3&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p&gt;&lt;strong&gt;Neighborhood:&lt;/strong&gt; Myeongdong&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p&gt;&lt;strong&gt;Why:&lt;/strong&gt; A vibrant, central hub with endless shopping, dining, and street food, making it an exciting and convenient base for explorers of all ages.&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div class="bg-stone-100 p-6 rounded-lg"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;h3 class="font-bold text-lg mb-2 text-slate-700"&gt;How to Use This Guide&lt;/h3&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p&gt;Click the tabs to switch sections. In the 'Itinerary' tab, click on any day to expand its schedule and find AI-powered tweaks. The new 'Culture' tab lets you ask questions about Korea.&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/section&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;section id="itinerary" class="section"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div class="bg-white p-6 rounded-xl shadow-lg"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;h2 class="text-3xl font-bold text-center mb-2 text-amber-600"&gt;Daily Expedition Plan&lt;/h2&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;p class="text-slate-600 text-center max-w-3xl mx-auto mb-8"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>This is your day-by-day guide. Click a day to reveal the plan and look for the ✨ button to get AI-powered suggestions to make the day even more fun for your 12-year-old!</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div id="itinerary-container" class="space-y-4"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/section&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;section id="logistics" class="section"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">             </span>&lt;div class="bg-white p-6 rounded-xl shadow-lg"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;h2 class="text-3xl font-bold text-center mb-2 text-amber-600"&gt;Arrival &amp; Logistics Blueprint&lt;/h2&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;p class="text-slate-600 text-center max-w-3xl mx-auto mb-8"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>A smooth journey starts with solid planning. This section covers the essential logistics for your arrival and for navigating Seoul like a pro.</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div class="space-y-8"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;h3 class="text-2xl font-semibold mb-4 text-slate-700"&gt;Incheon Airport to Myeongdong&lt;/h3&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p class="text-slate-600 mb-6"&gt;For a family arriving with luggage after a long flight, the &lt;strong class="text-amber-700"&gt;Airport Limousine Bus&lt;/strong&gt; is the top recommendation. The chart below compares options.&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div class="chart-container bg-stone-50 p-4 rounded-lg"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;canvas id="transport-chart"&gt;&lt;/canvas&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div class="grid md:grid-cols-2 gap-8 pt-8"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div class="bg-stone-100 p-6 rounded-lg"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                           </span>&lt;h3 class="text-2xl font-semibold mb-3 text-slate-700"&gt;Connectivity: eSIM&lt;/h3&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                           </span>&lt;p class="text-slate-600"&gt;For seamless navigation, an &lt;strong class="text-amber-700"&gt;eSIM&lt;/strong&gt; for each adult is highly recommended. It eliminates extra hardware and ensures individual connectivity.&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div class="bg-stone-100 p-6 rounded-lg"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                           </span>&lt;h3 class="text-2xl font-semibold mb-3 text-slate-700"&gt;Transit &amp; Payment: WOWPASS&lt;/h3&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                           </span>&lt;p class="text-slate-600"&gt;The &lt;strong class="text-amber-700"&gt;WOWPASS&lt;/strong&gt; is an all-in-one card for tourists, combining currency exchange, a prepaid debit card, and a transit card. Get one at the airport.&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                     </span>&lt;div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;h3 class="text-2xl font-semibold mb-4 mt-8 text-slate-700"&gt;Hotel Recommendations in Myeongdong&lt;/h3&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div id="hotel-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/section&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;section id="food" class="section"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">             </span>&lt;div class="bg-white p-6 rounded-xl shadow-lg"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;h2 class="text-3xl font-bold text-center mb-2 text-amber-600"&gt;A Culinary Field Guide&lt;/h2&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                 </span>&lt;p class="text-slate-600 text-center max-w-3xl mx-auto mb-6"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>Seoul is a food lover's paradise. This guide introduces you to essential Korean dishes. Use the filters to sort dishes by spice level to find the perfect meal.</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div id="food-filters" class="flex justify-center gap-2 mb-8 flex-wrap"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button data-filter="all" class="food-filter-btn px-4 py-2 text-sm font-medium rounded-full transition bg-amber-500 text-white"&gt;All&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button data-filter="1" class="food-filter-btn px-4 py-2 text-sm font-medium rounded-full transition bg-stone-200 text-slate-700 hover:bg-stone-300"&gt;Mild (🌶️)&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button data-filter="2-3" class="food-filter-btn px-4 py-2 text-sm font-medium rounded-full transition bg-stone-200 text-slate-700 hover:bg-stone-300"&gt;Medium (🌶️🌶️)&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;button data-filter="4" class="food-filter-btn px-4 py-2 text-sm font-medium rounded-full transition bg-stone-200 text-slate-700 hover:bg-stone-300"&gt;Spicy (🌶️🌶️🌶️)&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div id="food-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/section&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;section id="culture" class="section"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div class="bg-white p-8 rounded-xl shadow-lg"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;h2 class="text-3xl font-bold text-center mb-2 text-amber-600"&gt;✨ AI Culture Guide&lt;/h2&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;p class="text-slate-600 text-center max-w-3xl mx-auto mb-8"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>Have a question about Korean culture, etiquette, or language? Ask your AI guide! Whether you're wondering about tipping customs or how to say "hello," get instant, helpful answers for your trip.</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;div class="max-w-2xl mx-auto"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div class="flex gap-2"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;input type="text" id="culture-question-input" class="flex-grow border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-amber-500 focus:outline-none" placeholder="e.g., How do I say 'thank you'?"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;button id="ask-culture-btn" class="bg-amber-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-amber-600 transition"&gt;Ask&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div id="culture-answer-container" class="mt-6 bg-stone-50 p-6 rounded-lg min-h-[100px] text-slate-700 whitespace-pre-wrap"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>Your answer will appear here...</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/section&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/main&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;div id="ai-modal" class="modal-overlay"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="modal-content"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div class="flex justify-between items-center mb-4"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;h3 id="modal-title" class="text-2xl font-bold text-amber-600"&gt;✨ AI Suggestions&lt;/h3&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;button id="modal-close-btn" class="text-3xl text-slate-500 hover:text-slate-800"&gt;&amp;times;&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;div id="modal-body" class="whitespace-pre-wrap"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>&lt;!-- AI content will be injected here --&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</span></p>
-<p class="p2"><span class="s1"><span class="Apple-converted-space">    </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;script&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const itineraryData = [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>day: 1,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>date: "Sun, Oct 5",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>theme: "Immersion &amp; Sensory Overload",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>icon: "✨",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>plan: [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "4PM-7PM", activity: "Arrival &amp; Hotel Check-in", description: "Take the Airport Limousine Bus to Myeongdong, check into your hotel, and get refreshed for the evening." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "7PM onwards", activity: "Myeongdong Night Market Safari", description: "Wander the neon-lit streets and have dinner by sampling various street foods like Tornado Potato, Grilled Cheese Lobster, and Egg Bread." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "8:30PM", activity: "Wappen House", description: "Design your own personalized souvenirs by choosing unique patches to be ironed onto keychains or bags." }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>]</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>day: 2,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>date: "Mon, Oct 6",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>theme: "A Royal Journey",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>icon: "🏯",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>plan: [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "9AM-1PM", activity: "Gyeongbokgung Palace in Hanbok", description: "Rent traditional Hanbok attire (grants free palace entry!) and watch the Royal Guard Changing Ceremony at 10 AM." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "1PM", activity: "Lunch at Tosokchon Samgyetang", description: "Enjoy legendary ginseng chicken soup in a traditional hanok setting near the palace." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "2:30PM-5PM", activity: "Bukchon Hanok Village", description: "Explore the charming, preserved village of traditional Korean houses. Remember to be quiet as it's a residential area." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "5PM onwards", activity: "Explore Insadong &amp; Ssamziegil", description: "Visit the unique Ssamziegil craft mall, have dinner at Gaeseong Mandu Koong (dumplings), and relax at a traditional teahouse." }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>]</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>day: 3,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>date: "Tue, Oct 7",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>theme: "History, Tension &amp; Hope",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>icon: " binoculars ",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>plan: [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "Full Day", activity: "DMZ Tour", description: "Take a pre-booked tour to the Demilitarized Zone. Visit Imjingak Park, the 3rd Infiltration Tunnel, and Dora Observatory. **MUST BRING PHYSICAL PASSPORTS**." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "Evening", activity: "Chimaek Dinner", description: "After a long day, relax with a classic Korean meal of fried chicken and beer (or soda for the younger one!) in Myeongdong at a spot like Chir Chir." }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>]</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>day: 4,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>date: "Wed, Oct 8",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>theme: "The Pulse of Modern Seoul",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>icon: "🏙️",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>plan: [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "10:30AM-1PM", activity: "COEX Complex &amp; Bongeunsa Temple", description: "Visit the stunning Starfield Library and COEX Aquarium, then walk across to the serene, 1200-year-old Bongeunsa Temple." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "1PM", activity: "Lunch in Gangnam", description: "Choose between teen-friendly Shake Shack or upscale K-BBQ at Budnamujip." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "3PM", activity: "K-Star Road", description: "Fun photo-op with the 'GangnamDol' bear statues representing famous K-Pop groups in Apgujeong." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "5PM onwards", activity: "Namsan Tower at Sunset", description: "Take the Namsan Cable Car up before sunset to see the city view transform. Have a casual dinner at N Burger in the tower plaza." }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>]</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>day: 5,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>date: "Thu, Oct 9",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>theme: "Youth Culture &amp; Creative Soul",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>icon: "🎨",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>plan: [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "11AM onwards", activity: "Explore Hongdae", description: "Dive into the center of youth fashion, indie music, and street art. Great for trendy, affordable shopping." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "Lunch", activity: "Yoogane Chicken Galbi", description: "Enjoy a fun, interactive meal where spicy chicken and veggies are cooked at your table." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "Afternoon", activity: "Themed Cafe Hopping", description: "Visit quirky cafes like the Thanks Nature Cafe (with sheep!), the Harry Potter-themed 943 King's Cross, or the 2D cartoon Greem Cafe." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "5PM onwards", activity: "Watch Street Busking", description: "See talented K-pop dance crews and singers perform for free on the streets of Hongdae." }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>]</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>day: 6,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>date: "Fri, Oct 10",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>theme: "Market Discoveries &amp; Riverside Views",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>icon: "🧺",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>plan: [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "10AM-1PM", activity: "Gwangjang Market Food Tour", description: "Visit one of Seoul's oldest markets. Try Bindaetteok (mung bean pancakes), Mayak Kimbap, and the famous Kalguksu (knife-cut noodles)." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "2PM-5PM", activity: "Namdaemun Market Exploration", description: "Get lost in the vast, labyrinthine market selling everything imaginable. A great place for people-watching." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "6PM onwards", activity: "Picnic at Banpo Hangang Park", description: "Enjoy a local pastime. Grab fried chicken and watch the spectacular Banpo Bridge Moonlight Rainbow Fountain show at 7:30 PM." }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>]</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>day: 7,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>date: "Sat, Oct 11",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>theme: "Lasting Impressions &amp; Departure",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>icon: "✈️",</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>plan: [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "Morning", activity: "Choose Your Adventure", description: "Option A (Calm): Visit the peaceful Namsangol Hanok Village. Option B (Fun): Explore the high-tech, interactive HiKR Ground K-Culture center." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "1PM", activity: "Final Lunch", description: "Have a last meal in Myeongdong. Try the famous and delicious Isaac Toast sandwiches." },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>{ time: "2PM", activity: "Head to Airport", description: "Be at an Airport Limousine Bus stop by 2 PM for your 6 PM flight. This allows ample time for travel, check-in, and tax refund processing." }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>]</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>];</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const hotelData = [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Lotte Hotel Seoul", tier: "Luxury", rooms: "Family Twin Rooms", feature: "Ultimate luxury, connected to shopping" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Pacific Hotel", tier: "Upper Mid-Range", rooms: "Triple / Family Rooms", feature: "Excellent location, classic comfort" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Hotel Skypark Central", tier: "Mid-Range", rooms: "Triple / Family Rooms", feature: "Heart of the action, rooftop patio" },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Orakai Insadong Suites", tier: "Aparthotel", rooms: "1-Bedroom Suites", feature: "Maximum space, kitchen, pool" }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>];</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const foodData = [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Kimchi Jjigae", description: "A rich, hearty, and spicy stew made with aged kimchi, tofu, and pork.", spice: 4 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Samgyetang", description: "A whole young chicken stuffed with glutinous rice, ginseng, and jujubes, served in a delicate broth.", spice: 1 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Bibimbap", description: "A bowl of warm rice topped with an array of seasoned vegetables, meat, and a fried egg, mixed with chili paste.", spice: 3 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Bulgogi", description: "Thinly sliced beef marinated in a sweet soy sauce and grilled. A non-spicy favorite.", spice: 1 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Japchae", description: "Savory and slightly sweet stir-fried glass noodles with vegetables and meat.", spice: 1 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Tteokbokki", description: "Chewy rice cakes and fish cakes simmered in a sweet and spicy red chili sauce.", spice: 4 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Bindaetteok", description: "A savory, crispy pancake made from ground mung beans, often with vegetables and meat.", spice: 1 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Kalguksu", description: "Hearty, handmade, knife-cut wheat noodles served in a rich broth, often with seafood or chicken.", spice: 1 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Samgyeopsal", description: "Thick slices of unmarinated pork belly grilled at the table. The quintessential K-BBQ experience.", spice: 1 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Naengmyeon", description: "A refreshing dish of chewy buckwheat noodles served in a chilled broth, perfect for warmer days.", spice: 1 },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>{ name: "Hotteok", description: "A sweet, griddled pancake filled with a mixture of brown sugar, cinnamon, and nuts.", spice: 1 }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>];</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>document.addEventListener('DOMContentLoaded', () =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const itineraryContainer = document.getElementById('itinerary-container');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const hotelContainer = document.getElementById('hotel-container');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const foodContainer = document.getElementById('food-container');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const foodFilters = document.getElementById('food-filters');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const mainNav = document.getElementById('main-nav');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const sections = document.querySelectorAll('.section');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const tabs = document.querySelectorAll('.nav-tab');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const modal = document.getElementById('ai-modal');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const modalTitle = document.getElementById('modal-title');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const modalBody = document.getElementById('modal-body');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const modalCloseBtn = document.getElementById('modal-close-btn');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const askCultureBtn = document.getElementById('ask-culture-btn');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const cultureQuestionInput = document.getElementById('culture-question-input');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const cultureAnswerContainer = document.getElementById('culture-answer-container');</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>const apiKey = "";<span class="Apple-converted-space"> </span></span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>async function callGeminiAPI(prompt, maxRetries = 3) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;</span></p>
-<p class="p2"><span class="s1"><span class="Apple-converted-space">                </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const payload = { contents: chatHistory };</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>for (let i = 0; i &lt; maxRetries; i++) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>try {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>const response = await fetch(apiUrl, {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>method: 'POST',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>headers: { 'Content-Type': 'application/json' },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>body: JSON.stringify(payload)</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>});</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>if (!response.ok) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>throw new Error(`HTTP error! status: ${response.status}`);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>const result = await response.json();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>if (result.candidates &amp;&amp; result.candidates.length &gt; 0 &amp;&amp; result.candidates[0].content &amp;&amp; result.candidates[0].content.parts &amp;&amp; result.candidates[0].content.parts.length &gt; 0) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>return result.candidates[0].content.parts[0].text;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>} else {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>throw new Error("Invalid response structure from API.");</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>} catch (error) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>if (i === maxRetries - 1) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>console.error("API call failed after multiple retries:", error);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>return "Sorry, I couldn't get a response. Please check the API key and try again.";</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>const delay = Math.pow(2, i) * 1000;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>await new Promise(res =&gt; setTimeout(res, delay));</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>function showModal(title, bodyContent) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>modalTitle.textContent = title;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>modalBody.innerHTML = bodyContent;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>modal.classList.add('visible');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>function closeModal() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>modal.classList.remove('visible');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>function showLoader() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>return '&lt;div class="flex justify-center items-center"&gt;&lt;div class="loader"&gt;&lt;/div&gt;&lt;/div&gt;';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>async function handleKidFriendlyTweaks(e) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const day = e.target.dataset.day;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const dayData = itineraryData.find(d =&gt; d.day == day);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (!dayData) return;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>showModal(`✨ Tweaks for Day ${day}`, showLoader());</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const planText = dayData.plan.map(p =&gt; `${p.activity}: ${p.description}`).join('\n');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const prompt = `Here is a plan for a day in Seoul with the theme "${dayData.theme}":\n\n${planText}\n\nPlease suggest 2-3 specific, fun tweaks to make this day more exciting for a 12-year-old boy. Focus on interactive activities, cool shops, or fun snacks that could be added or swapped in. Keep the suggestions concise, practical, and in a simple list format.`;</span></p>
-<p class="p2"><span class="s1"><span class="Apple-converted-space">                </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const response = await callGeminiAPI(prompt);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>modalBody.innerHTML = response;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>async function handleCultureQuestion() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const question = cultureQuestionInput.value.trim();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (!question) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>cultureAnswerContainer.textContent = "Please enter a question first.";</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>return;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>cultureAnswerContainer.innerHTML = showLoader();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const prompt = `As a friendly guide for a tourist in South Korea, please answer this question clearly and concisely: "${question}"`;</span></p>
-<p class="p2"><span class="s1"><span class="Apple-converted-space">                </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const response = await callGeminiAPI(prompt);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>cultureAnswerContainer.textContent = response;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>function renderItinerary() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>itineraryContainer.innerHTML = itineraryData.map(day =&gt; `</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div class="border border-stone-200 rounded-lg overflow-hidden"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div class="day-card-header p-4 cursor-pointer flex justify-between items-center bg-stone-100 hover:bg-stone-200" data-day="${day.day}"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div class="flex items-center"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;span class="text-2xl mr-4"&gt;${day.icon}&lt;/span&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;h3 class="font-bold text-lg text-slate-800"&gt;Day ${day.day}: ${day.theme}&lt;/h3&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;p class="text-sm text-slate-500"&gt;${day.date}&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;span class="text-2xl text-slate-400 transform transition-transform duration-500"&gt;&amp;#x25BC;&lt;/span&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div class="details-content"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;div class="p-4 border-t border-stone-200 bg-white"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;ul class="space-y-3"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>${day.plan.map(item =&gt; `</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>&lt;li class="flex items-start"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                            </span>&lt;strong class="w-24 text-right pr-4 font-semibold text-amber-600"&gt;${item.time}&lt;/strong&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                            </span>&lt;div class="flex-1"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                                </span>&lt;p class="font-semibold text-slate-700"&gt;${item.activity}&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                                </span>&lt;p class="text-sm text-slate-600"&gt;${item.description}&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                            </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>&lt;/li&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>`).join('')}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;/ul&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;div class="mt-4 pt-4 border-t border-stone-200"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>&lt;button class="kid-friendly-btn bg-amber-100 text-amber-800 font-semibold py-2 px-4 rounded-lg hover:bg-amber-200 transition text-sm" data-day="${day.day}"&gt;✨ Get Kid-Friendly Tweaks&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>`).join('');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>function renderHotels() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>hotelContainer.innerHTML = hotelData.map(hotel =&gt; `</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div class="bg-stone-100 p-4 rounded-lg h-full flex flex-col"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;h4 class="font-bold text-md text-slate-800"&gt;${hotel.name}&lt;/h4&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p class="text-sm text-amber-700 font-semibold mb-1"&gt;${hotel.tier}&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p class="text-sm text-slate-600 flex-grow"&gt;${hotel.feature}&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p class="text-xs mt-2 bg-white text-slate-500 rounded-full px-2 py-1 self-start"&gt;${hotel.rooms}&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>`).join('');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p2"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>function renderFood(filter = 'all') {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const filteredData = foodData.filter(item =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>if (filter === 'all') return true;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>if (filter === '2-3') return item.spice &gt;= 2 &amp;&amp; item.spice &lt;= 3;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>return item.spice == filter;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>});</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>foodContainer.innerHTML = filteredData.map(food =&gt; `</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;div class="bg-stone-100 p-4 rounded-lg"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;div class="flex justify-between items-start mb-2"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                             </span>&lt;h4 class="font-bold text-lg text-slate-800"&gt;${food.name}&lt;/h4&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                             </span>&lt;span class="text-lg"&gt;${'🌶️'.repeat(food.spice)}&lt;/span&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>&lt;p class="text-slate-600 text-sm"&gt;${food.description}&lt;/p&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>`).join('');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>function createTransportChart() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const ctx = document.getElementById('transport-chart').getContext('2d');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>new Chart(ctx, {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>type: 'bar',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>data: {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>labels: ['Airport Limousine Bus', 'AREX + Subway', 'Taxi'],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>datasets: [</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>label: 'Estimated Cost (KRW for 3)',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>data: [51000, 32700, 85000],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>backgroundColor: 'rgba(245, 158, 11, 0.6)',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>borderColor: 'rgba(245, 158, 11, 1)',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>borderWidth: 1,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>yAxisID: 'y'</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>{</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>label: 'Estimated Time (minutes)',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>data: [82, 68, 75],</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>backgroundColor: 'rgba(100, 116, 139, 0.6)',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>borderColor: 'rgba(100, 116, 139, 1)',</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>borderWidth: 1,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>yAxisID: 'y1'</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>]</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>options: {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>responsive: true,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>maintainAspectRatio: false,</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>plugins: {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>tooltip: {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>callbacks: {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>label: function(context) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>let label = context.dataset.label || '';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>if (label) { label += ': '; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>if (context.parsed.y !== null) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                            </span>if(context.dataset.label.includes('Cost')){</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                                </span>label += new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(context.parsed.y);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                            </span>} else {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                                </span>label += context.parsed.y + ' min';</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                            </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                        </span>return label;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                    </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                                </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>},</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>scales: {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Cost (KRW)' } },</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                            </span>y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Time (min)' }, grid: { drawOnChartArea: false } }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>});</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p2"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>itineraryContainer.addEventListener('click', e =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>const header = e.target.closest('.day-card-header');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (header) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>const content = header.nextElementSibling;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>const arrow = header.querySelector('span:last-child');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>content.classList.toggle('open');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>arrow.classList.toggle('rotate-180');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (e.target.classList.contains('kid-friendly-btn')) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>handleKidFriendlyTweaks(e);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>});</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>foodFilters.addEventListener('click', e =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (e.target.tagName === 'BUTTON') {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>document.querySelectorAll('.food-filter-btn').forEach(btn =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>btn.classList.remove('bg-amber-500', 'text-white');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                        </span>btn.classList.add('bg-stone-200', 'text-slate-700');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>});</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>e.target.classList.add('bg-amber-500', 'text-white');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>e.target.classList.remove('bg-stone-200', 'text-slate-700');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>renderFood(e.target.dataset.filter);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>});</span></p>
-<p class="p2"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>mainNav.addEventListener('click', e =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (e.target.classList.contains('nav-tab')) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>const tabName = e.target.dataset.tab;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>tabs.forEach(tab =&gt; tab.classList.remove('tab-active'));</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>e.target.classList.add('tab-active');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>sections.forEach(section =&gt; section.classList.toggle('active', section.id === tabName));</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>});</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>modalCloseBtn.addEventListener('click', closeModal);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>modal.addEventListener('click', e =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (e.target === modal) {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>closeModal();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>});</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>askCultureBtn.addEventListener('click', handleCultureQuestion);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>cultureQuestionInput.addEventListener('keypress', e =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>if (e.key === 'Enter') {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                    </span>handleCultureQuestion();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>});</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>function initialize() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>renderItinerary();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>renderHotels();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>renderFood();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>createTransportChart();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>document.querySelector('.nav-tab[data-tab="overview"]').classList.add('tab-active');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">                </span>document.getElementById('overview').classList.add('active');</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>initialize();</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>});</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/body&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/html&gt;</span></p>
+<body class="bg-stone-50 text-slate-800">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex flex-col sm:flex-row justify-between items-center">
+                <h1 class="text-2xl font-bold text-slate-800 mb-2 sm:mb-0">Seoul Expedition Planner</h1>
+                <nav id="main-nav" class="flex flex-wrap justify-center gap-2 sm:gap-4">
+                    <button data-tab="overview" class="nav-tab px-4 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent hover:text-amber-600 hover:border-amber-600 transition">Overview</button>
+                    <button data-tab="itinerary" class="nav-tab px-4 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent hover:text-amber-600 hover:border-amber-600 transition">Itinerary</button>
+                    <button data-tab="logistics" class="nav-tab px-4 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent hover:text-amber-600 hover:border-amber-600 transition">Logistics</button>
+                    <button data-tab="food" class="nav-tab px-4 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent hover:text-amber-600 hover:border-amber-600 transition">Food Guide</button>
+                    <button data-tab="culture" class="nav-tab px-4 py-2 text-sm font-medium text-slate-600 border-b-2 border-transparent hover:text-amber-600 hover:border-amber-600 transition">Culture</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 md:p-8">
+        
+        <section id="overview" class="section">
+            <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+                <h2 class="text-3xl font-bold text-amber-600 mb-4">Your AI-Powered Adventure in Seoul!</h2>
+                <p class="text-slate-600 max-w-3xl mx-auto mb-6">
+                    Welcome to your personalized, interactive guide for an unforgettable week in Seoul. This dashboard is now enhanced with AI to help you plan and explore. Use the tabs to find your itinerary, logistics, and food guide. Check the new **Culture** tab to ask questions, and look for the ✨ sparkle buttons in the itinerary for AI-powered suggestions!
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                    <div class="bg-stone-100 p-6 rounded-lg">
+                        <h3 class="font-bold text-lg mb-2 text-slate-700">Trip Details</h3>
+                        <p><strong>Destination:</strong> Seoul, South Korea</p>
+                        <p><strong>Duration:</strong> 7 Days / 6 Nights</p>
+                        <p><strong>Dates:</strong> Oct 5th - Oct 11th</p>
+                        <p><strong>Travelers:</strong> 3 (2 Adults, 1 Child)</p>
+                    </div>
+                    <div class="bg-stone-100 p-6 rounded-lg">
+                        <h3 class="font-bold text-lg mb-2 text-slate-700">Recommended Basecamp</h3>
+                        <p><strong>Neighborhood:</strong> Myeongdong</p>
+                        <p><strong>Why:</strong> A vibrant, central hub with endless shopping, dining, and street food, making it an exciting and convenient base for explorers of all ages.</p>
+                    </div>
+                    <div class="bg-stone-100 p-6 rounded-lg">
+                        <h3 class="font-bold text-lg mb-2 text-slate-700">How to Use This Guide</h3>
+                        <p>Click the tabs to switch sections. In the 'Itinerary' tab, click on any day to expand its schedule and find AI-powered tweaks. The new 'Culture' tab lets you ask questions about Korea.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="itinerary" class="section">
+            <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-3xl font-bold text-center mb-2 text-amber-600">Daily Expedition Plan</h2>
+                <p class="text-slate-600 text-center max-w-3xl mx-auto mb-8">
+                    This is your day-by-day guide. Click a day to reveal the plan and look for the ✨ button to get AI-powered suggestions to make the day even more fun for your 12-year-old!
+                </p>
+                <div id="itinerary-container" class="space-y-4"></div>
+            </div>
+        </section>
+
+        <section id="logistics" class="section">
+             <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-3xl font-bold text-center mb-2 text-amber-600">Arrival & Logistics Blueprint</h2>
+                <p class="text-slate-600 text-center max-w-3xl mx-auto mb-8">
+                    A smooth journey starts with solid planning. This section covers the essential logistics for your arrival and for navigating Seoul like a pro.
+                </p>
+                <div class="space-y-8">
+                    <div>
+                        <h3 class="text-2xl font-semibold mb-4 text-slate-700">Incheon Airport to Myeongdong</h3>
+                        <p class="text-slate-600 mb-6">For a family arriving with luggage after a long flight, the <strong class="text-amber-700">Airport Limousine Bus</strong> is the top recommendation. The chart below compares options.</p>
+                        <div class="chart-container bg-stone-50 p-4 rounded-lg">
+                            <canvas id="transport-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-8 pt-8">
+                        <div class="bg-stone-100 p-6 rounded-lg">
+                           <h3 class="text-2xl font-semibold mb-3 text-slate-700">Connectivity: eSIM</h3>
+                           <p class="text-slate-600">For seamless navigation, an <strong class="text-amber-700">eSIM</strong> for each adult is highly recommended. It eliminates extra hardware and ensures individual connectivity.</p>
+                        </div>
+                        <div class="bg-stone-100 p-6 rounded-lg">
+                           <h3 class="text-2xl font-semibold mb-3 text-slate-700">Transit & Payment: WOWPASS</h3>
+                           <p class="text-slate-600">The <strong class="text-amber-700">WOWPASS</strong> is an all-in-one card for tourists, combining currency exchange, a prepaid debit card, and a transit card. Get one at the airport.</p>
+                        </div>
+                    </div>
+                     <div>
+                        <h3 class="text-2xl font-semibold mb-4 mt-8 text-slate-700">Hotel Recommendations in Myeongdong</h3>
+                        <div id="hotel-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="food" class="section">
+             <div class="bg-white p-6 rounded-xl shadow-lg">
+                <h2 class="text-3xl font-bold text-center mb-2 text-amber-600">A Culinary Field Guide</h2>
+                 <p class="text-slate-600 text-center max-w-3xl mx-auto mb-6">
+                    Seoul is a food lover's paradise. This guide introduces you to essential Korean dishes. Use the filters to sort dishes by spice level to find the perfect meal.
+                </p>
+                <div id="food-filters" class="flex justify-center gap-2 mb-8 flex-wrap">
+                    <button data-filter="all" class="food-filter-btn px-4 py-2 text-sm font-medium rounded-full transition bg-amber-500 text-white">All</button>
+                    <button data-filter="1" class="food-filter-btn px-4 py-2 text-sm font-medium rounded-full transition bg-stone-200 text-slate-700 hover:bg-stone-300">Mild (🌶️)</button>
+                    <button data-filter="2-3" class="food-filter-btn px-4 py-2 text-sm font-medium rounded-full transition bg-stone-200 text-slate-700 hover:bg-stone-300">Medium (🌶️🌶️)</button>
+                    <button data-filter="4" class="food-filter-btn px-4 py-2 text-sm font-medium rounded-full transition bg-stone-200 text-slate-700 hover:bg-stone-300">Spicy (🌶️🌶️🌶️)</button>
+                </div>
+                <div id="food-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </section>
+
+        <section id="culture" class="section">
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <h2 class="text-3xl font-bold text-center mb-2 text-amber-600">✨ AI Culture Guide</h2>
+                <p class="text-slate-600 text-center max-w-3xl mx-auto mb-8">
+                    Have a question about Korean culture, etiquette, or language? Ask your AI guide! Whether you're wondering about tipping customs or how to say "hello," get instant, helpful answers for your trip.
+                </p>
+                <div class="max-w-2xl mx-auto">
+                    <div class="flex gap-2">
+                        <input type="text" id="culture-question-input" class="flex-grow border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-amber-500 focus:outline-none" placeholder="e.g., How do I say 'thank you'?">
+                        <button id="ask-culture-btn" class="bg-amber-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-amber-600 transition">Ask</button>
+                    </div>
+                    <div id="culture-answer-container" class="mt-6 bg-stone-50 p-6 rounded-lg min-h-[100px] text-slate-700 whitespace-pre-wrap">
+                        Your answer will appear here...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="ai-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="text-2xl font-bold text-amber-600">✨ AI Suggestions</h3>
+                <button id="modal-close-btn" class="text-3xl text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <div id="modal-body" class="whitespace-pre-wrap">
+                <!-- AI content will be injected here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const itineraryData = [
+            {
+                day: 1,
+                date: "Sun, Oct 5",
+                theme: "Immersion & Sensory Overload",
+                icon: "✨",
+                plan: [
+                    { time: "4PM-7PM", activity: "Arrival & Hotel Check-in", description: "Take the Airport Limousine Bus to Myeongdong, check into your hotel, and get refreshed for the evening." },
+                    { time: "7PM onwards", activity: "Myeongdong Night Market Safari", description: "Wander the neon-lit streets and have dinner by sampling various street foods like Tornado Potato, Grilled Cheese Lobster, and Egg Bread." },
+                    { time: "8:30PM", activity: "Wappen House", description: "Design your own personalized souvenirs by choosing unique patches to be ironed onto keychains or bags." }
+                ]
+            },
+            {
+                day: 2,
+                date: "Mon, Oct 6",
+                theme: "A Royal Journey",
+                icon: "🏯",
+                plan: [
+                    { time: "9AM-1PM", activity: "Gyeongbokgung Palace in Hanbok", description: "Rent traditional Hanbok attire (grants free palace entry!) and watch the Royal Guard Changing Ceremony at 10 AM." },
+                    { time: "1PM", activity: "Lunch at Tosokchon Samgyetang", description: "Enjoy legendary ginseng chicken soup in a traditional hanok setting near the palace." },
+                    { time: "2:30PM-5PM", activity: "Bukchon Hanok Village", description: "Explore the charming, preserved village of traditional Korean houses. Remember to be quiet as it's a residential area." },
+                    { time: "5PM onwards", activity: "Explore Insadong & Ssamziegil", description: "Visit the unique Ssamziegil craft mall, have dinner at Gaeseong Mandu Koong (dumplings), and relax at a traditional teahouse." }
+                ]
+            },
+            {
+                day: 3,
+                date: "Tue, Oct 7",
+                theme: "History, Tension & Hope",
+                icon: " binoculars ",
+                plan: [
+                    { time: "Full Day", activity: "DMZ Tour", description: "Take a pre-booked tour to the Demilitarized Zone. Visit Imjingak Park, the 3rd Infiltration Tunnel, and Dora Observatory. **MUST BRING PHYSICAL PASSPORTS**." },
+                    { time: "Evening", activity: "Chimaek Dinner", description: "After a long day, relax with a classic Korean meal of fried chicken and beer (or soda for the younger one!) in Myeongdong at a spot like Chir Chir." }
+                ]
+            },
+            {
+                day: 4,
+                date: "Wed, Oct 8",
+                theme: "The Pulse of Modern Seoul",
+                icon: "🏙️",
+                plan: [
+                    { time: "10:30AM-1PM", activity: "COEX Complex & Bongeunsa Temple", description: "Visit the stunning Starfield Library and COEX Aquarium, then walk across to the serene, 1200-year-old Bongeunsa Temple." },
+                    { time: "1PM", activity: "Lunch in Gangnam", description: "Choose between teen-friendly Shake Shack or upscale K-BBQ at Budnamujip." },
+                    { time: "3PM", activity: "K-Star Road", description: "Fun photo-op with the 'GangnamDol' bear statues representing famous K-Pop groups in Apgujeong." },
+                    { time: "5PM onwards", activity: "Namsan Tower at Sunset", description: "Take the Namsan Cable Car up before sunset to see the city view transform. Have a casual dinner at N Burger in the tower plaza." }
+                ]
+            },
+            {
+                day: 5,
+                date: "Thu, Oct 9",
+                theme: "Youth Culture & Creative Soul",
+                icon: "🎨",
+                plan: [
+                    { time: "11AM onwards", activity: "Explore Hongdae", description: "Dive into the center of youth fashion, indie music, and street art. Great for trendy, affordable shopping." },
+                    { time: "Lunch", activity: "Yoogane Chicken Galbi", description: "Enjoy a fun, interactive meal where spicy chicken and veggies are cooked at your table." },
+                    { time: "Afternoon", activity: "Themed Cafe Hopping", description: "Visit quirky cafes like the Thanks Nature Cafe (with sheep!), the Harry Potter-themed 943 King's Cross, or the 2D cartoon Greem Cafe." },
+                    { time: "5PM onwards", activity: "Watch Street Busking", description: "See talented K-pop dance crews and singers perform for free on the streets of Hongdae." }
+                ]
+            },
+            {
+                day: 6,
+                date: "Fri, Oct 10",
+                theme: "Market Discoveries & Riverside Views",
+                icon: "🧺",
+                plan: [
+                    { time: "10AM-1PM", activity: "Gwangjang Market Food Tour", description: "Visit one of Seoul's oldest markets. Try Bindaetteok (mung bean pancakes), Mayak Kimbap, and the famous Kalguksu (knife-cut noodles)." },
+                    { time: "2PM-5PM", activity: "Namdaemun Market Exploration", description: "Get lost in the vast, labyrinthine market selling everything imaginable. A great place for people-watching." },
+                    { time: "6PM onwards", activity: "Picnic at Banpo Hangang Park", description: "Enjoy a local pastime. Grab fried chicken and watch the spectacular Banpo Bridge Moonlight Rainbow Fountain show at 7:30 PM." }
+                ]
+            },
+            {
+                day: 7,
+                date: "Sat, Oct 11",
+                theme: "Lasting Impressions & Departure",
+                icon: "✈️",
+                plan: [
+                    { time: "Morning", activity: "Choose Your Adventure", description: "Option A (Calm): Visit the peaceful Namsangol Hanok Village. Option B (Fun): Explore the high-tech, interactive HiKR Ground K-Culture center." },
+                    { time: "1PM", activity: "Final Lunch", description: "Have a last meal in Myeongdong. Try the famous and delicious Isaac Toast sandwiches." },
+                    { time: "2PM", activity: "Head to Airport", description: "Be at an Airport Limousine Bus stop by 2 PM for your 6 PM flight. This allows ample time for travel, check-in, and tax refund processing." }
+                ]
+            }
+        ];
+
+        const hotelData = [
+            { name: "Lotte Hotel Seoul", tier: "Luxury", rooms: "Family Twin Rooms", feature: "Ultimate luxury, connected to shopping" },
+            { name: "Pacific Hotel", tier: "Upper Mid-Range", rooms: "Triple / Family Rooms", feature: "Excellent location, classic comfort" },
+            { name: "Hotel Skypark Central", tier: "Mid-Range", rooms: "Triple / Family Rooms", feature: "Heart of the action, rooftop patio" },
+            { name: "Orakai Insadong Suites", tier: "Aparthotel", rooms: "1-Bedroom Suites", feature: "Maximum space, kitchen, pool" }
+        ];
+
+        const foodData = [
+            { name: "Kimchi Jjigae", description: "A rich, hearty, and spicy stew made with aged kimchi, tofu, and pork.", spice: 4 },
+            { name: "Samgyetang", description: "A whole young chicken stuffed with glutinous rice, ginseng, and jujubes, served in a delicate broth.", spice: 1 },
+            { name: "Bibimbap", description: "A bowl of warm rice topped with an array of seasoned vegetables, meat, and a fried egg, mixed with chili paste.", spice: 3 },
+            { name: "Bulgogi", description: "Thinly sliced beef marinated in a sweet soy sauce and grilled. A non-spicy favorite.", spice: 1 },
+            { name: "Japchae", description: "Savory and slightly sweet stir-fried glass noodles with vegetables and meat.", spice: 1 },
+            { name: "Tteokbokki", description: "Chewy rice cakes and fish cakes simmered in a sweet and spicy red chili sauce.", spice: 4 },
+            { name: "Bindaetteok", description: "A savory, crispy pancake made from ground mung beans, often with vegetables and meat.", spice: 1 },
+            { name: "Kalguksu", description: "Hearty, handmade, knife-cut wheat noodles served in a rich broth, often with seafood or chicken.", spice: 1 },
+            { name: "Samgyeopsal", description: "Thick slices of unmarinated pork belly grilled at the table. The quintessential K-BBQ experience.", spice: 1 },
+            { name: "Naengmyeon", description: "A refreshing dish of chewy buckwheat noodles served in a chilled broth, perfect for warmer days.", spice: 1 },
+            { name: "Hotteok", description: "A sweet, griddled pancake filled with a mixture of brown sugar, cinnamon, and nuts.", spice: 1 }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const itineraryContainer = document.getElementById('itinerary-container');
+            const hotelContainer = document.getElementById('hotel-container');
+            const foodContainer = document.getElementById('food-container');
+            const foodFilters = document.getElementById('food-filters');
+            const mainNav = document.getElementById('main-nav');
+            const sections = document.querySelectorAll('.section');
+            const tabs = document.querySelectorAll('.nav-tab');
+            const modal = document.getElementById('ai-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const askCultureBtn = document.getElementById('ask-culture-btn');
+            const cultureQuestionInput = document.getElementById('culture-question-input');
+            const cultureAnswerContainer = document.getElementById('culture-answer-container');
+
+            const apiKey = ""; 
+
+            async function callGeminiAPI(prompt, maxRetries = 3) {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                            return result.candidates[0].content.parts[0].text;
+                        } else {
+                            throw new Error("Invalid response structure from API.");
+                        }
+                    } catch (error) {
+                        if (i === maxRetries - 1) {
+                            console.error("API call failed after multiple retries:", error);
+                            return "Sorry, I couldn't get a response. Please check the API key and try again.";
+                        }
+                        const delay = Math.pow(2, i) * 1000;
+                        await new Promise(res => setTimeout(res, delay));
+                    }
+                }
+            }
+
+            function showModal(title, bodyContent) {
+                modalTitle.textContent = title;
+                modalBody.innerHTML = bodyContent;
+                modal.classList.add('visible');
+            }
+
+            function closeModal() {
+                modal.classList.remove('visible');
+            }
+
+            function showLoader() {
+                return '<div class="flex justify-center items-center"><div class="loader"></div></div>';
+            }
+
+            async function handleKidFriendlyTweaks(e) {
+                const day = e.target.dataset.day;
+                const dayData = itineraryData.find(d => d.day == day);
+                if (!dayData) return;
+
+                showModal(`✨ Tweaks for Day ${day}`, showLoader());
+
+                const planText = dayData.plan.map(p => `${p.activity}: ${p.description}`).join('\n');
+                const prompt = `Here is a plan for a day in Seoul with the theme "${dayData.theme}":\n\n${planText}\n\nPlease suggest 2-3 specific, fun tweaks to make this day more exciting for a 12-year-old boy. Focus on interactive activities, cool shops, or fun snacks that could be added or swapped in. Keep the suggestions concise, practical, and in a simple list format.`;
+                
+                const response = await callGeminiAPI(prompt);
+                modalBody.innerHTML = response;
+            }
+
+            async function handleCultureQuestion() {
+                const question = cultureQuestionInput.value.trim();
+                if (!question) {
+                    cultureAnswerContainer.textContent = "Please enter a question first.";
+                    return;
+                }
+
+                cultureAnswerContainer.innerHTML = showLoader();
+                const prompt = `As a friendly guide for a tourist in South Korea, please answer this question clearly and concisely: "${question}"`;
+                
+                const response = await callGeminiAPI(prompt);
+                cultureAnswerContainer.textContent = response;
+            }
+
+            function renderItinerary() {
+                itineraryContainer.innerHTML = itineraryData.map(day => `
+                    <div class="border border-stone-200 rounded-lg overflow-hidden">
+                        <div class="day-card-header p-4 cursor-pointer flex justify-between items-center bg-stone-100 hover:bg-stone-200" data-day="${day.day}">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-4">${day.icon}</span>
+                                <div>
+                                    <h3 class="font-bold text-lg text-slate-800">Day ${day.day}: ${day.theme}</h3>
+                                    <p class="text-sm text-slate-500">${day.date}</p>
+                                </div>
+                            </div>
+                            <span class="text-2xl text-slate-400 transform transition-transform duration-500">&#x25BC;</span>
+                        </div>
+                        <div class="details-content">
+                            <div class="p-4 border-t border-stone-200 bg-white">
+                                <ul class="space-y-3">
+                                    ${day.plan.map(item => `
+                                        <li class="flex items-start">
+                                            <strong class="w-24 text-right pr-4 font-semibold text-amber-600">${item.time}</strong>
+                                            <div class="flex-1">
+                                                <p class="font-semibold text-slate-700">${item.activity}</p>
+                                                <p class="text-sm text-slate-600">${item.description}</p>
+                                            </div>
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                                <div class="mt-4 pt-4 border-t border-stone-200">
+                                    <button class="kid-friendly-btn bg-amber-100 text-amber-800 font-semibold py-2 px-4 rounded-lg hover:bg-amber-200 transition text-sm" data-day="${day.day}">✨ Get Kid-Friendly Tweaks</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            function renderHotels() {
+                hotelContainer.innerHTML = hotelData.map(hotel => `
+                    <div class="bg-stone-100 p-4 rounded-lg h-full flex flex-col">
+                        <h4 class="font-bold text-md text-slate-800">${hotel.name}</h4>
+                        <p class="text-sm text-amber-700 font-semibold mb-1">${hotel.tier}</p>
+                        <p class="text-sm text-slate-600 flex-grow">${hotel.feature}</p>
+                        <p class="text-xs mt-2 bg-white text-slate-500 rounded-full px-2 py-1 self-start">${hotel.rooms}</p>
+                    </div>
+                `).join('');
+            }
+            
+            function renderFood(filter = 'all') {
+                const filteredData = foodData.filter(item => {
+                    if (filter === 'all') return true;
+                    if (filter === '2-3') return item.spice >= 2 && item.spice <= 3;
+                    return item.spice == filter;
+                });
+
+                foodContainer.innerHTML = filteredData.map(food => `
+                    <div class="bg-stone-100 p-4 rounded-lg">
+                        <div class="flex justify-between items-start mb-2">
+                             <h4 class="font-bold text-lg text-slate-800">${food.name}</h4>
+                             <span class="text-lg">${'🌶️'.repeat(food.spice)}</span>
+                        </div>
+                        <p class="text-slate-600 text-sm">${food.description}</p>
+                    </div>
+                `).join('');
+            }
+
+            function createTransportChart() {
+                const ctx = document.getElementById('transport-chart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Airport Limousine Bus', 'AREX + Subway', 'Taxi'],
+                        datasets: [
+                            {
+                                label: 'Estimated Cost (KRW for 3)',
+                                data: [51000, 32700, 85000],
+                                backgroundColor: 'rgba(245, 158, 11, 0.6)',
+                                borderColor: 'rgba(245, 158, 11, 1)',
+                                borderWidth: 1,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Estimated Time (minutes)',
+                                data: [82, 68, 75],
+                                backgroundColor: 'rgba(100, 116, 139, 0.6)',
+                                borderColor: 'rgba(100, 116, 139, 1)',
+                                borderWidth: 1,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) { label += ': '; }
+                                        if (context.parsed.y !== null) {
+                                            if(context.dataset.label.includes('Cost')){
+                                                label += new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(context.parsed.y);
+                                            } else {
+                                                label += context.parsed.y + ' min';
+                                            }
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Cost (KRW)' } },
+                            y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Time (min)' }, grid: { drawOnChartArea: false } }
+                        }
+                    }
+                });
+            }
+            
+            itineraryContainer.addEventListener('click', e => {
+                const header = e.target.closest('.day-card-header');
+                if (header) {
+                    const content = header.nextElementSibling;
+                    const arrow = header.querySelector('span:last-child');
+                    content.classList.toggle('open');
+                    arrow.classList.toggle('rotate-180');
+                }
+                if (e.target.classList.contains('kid-friendly-btn')) {
+                    handleKidFriendlyTweaks(e);
+                }
+            });
+
+            foodFilters.addEventListener('click', e => {
+                if (e.target.tagName === 'BUTTON') {
+                    document.querySelectorAll('.food-filter-btn').forEach(btn => {
+                        btn.classList.remove('bg-amber-500', 'text-white');
+                        btn.classList.add('bg-stone-200', 'text-slate-700');
+                    });
+                    e.target.classList.add('bg-amber-500', 'text-white');
+                    e.target.classList.remove('bg-stone-200', 'text-slate-700');
+                    renderFood(e.target.dataset.filter);
+                }
+            });
+            
+            mainNav.addEventListener('click', e => {
+                if (e.target.classList.contains('nav-tab')) {
+                    const tabName = e.target.dataset.tab;
+                    tabs.forEach(tab => tab.classList.remove('tab-active'));
+                    e.target.classList.add('tab-active');
+                    sections.forEach(section => section.classList.toggle('active', section.id === tabName));
+                }
+            });
+
+            modalCloseBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', e => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            askCultureBtn.addEventListener('click', handleCultureQuestion);
+            cultureQuestionInput.addEventListener('keypress', e => {
+                if (e.key === 'Enter') {
+                    handleCultureQuestion();
+                }
+            });
+
+            function initialize() {
+                renderItinerary();
+                renderHotels();
+                renderFood();
+                createTransportChart();
+                document.querySelector('.nav-tab[data-tab="overview"]').classList.add('tab-active');
+                document.getElementById('overview').classList.add('active');
+            }
+
+            initialize();
+        });
+    </script>
 </body>
 </html>
